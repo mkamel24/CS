@@ -2,30 +2,49 @@ import streamlit as st
 import numpy as np
 import joblib
 from PIL import Image
+import requests
 import os
 
-# Set page title and layout
-st.set_page_config(page_title="Concrete Strength Predictor", layout="centered")
+# URLs for GitHub-hosted files
+image_url = "https://raw.githubusercontent.com/mkamel24/CS/main/image.jpg"
+model_url = "https://github.com/mkamel24/CS/raw/main/catboost.joblib"
 
-# Load image
-image_path = "C:/Users/asus1/Desktop/image.jpg"
-if os.path.exists(image_path):
+# Paths to save locally
+image_path = "image.jpg"
+model_path = "catboost.joblib"
+
+# Function to download files if they don't exist
+def download_file(url, local_path):
+    if not os.path.exists(local_path):
+        r = requests.get(url)
+        if r.status_code == 200:
+            with open(local_path, 'wb') as f:
+                f.write(r.content)
+        else:
+            st.error(f"Failed to download file from {url}")
+            st.stop()
+
+# Download image and model
+download_file(image_url, image_path)
+download_file(model_url, model_path)
+
+# Load and display the image
+try:
     image = Image.open(image_path)
     st.image(image, use_column_width=True)
-else:
-    st.error(f"Image file not found at: {image_path}")
+except:
+    st.error("Image could not be loaded.")
 
 # Title and authors
 st.markdown("<h2 style='color:#0000FF;'>GUI model for Predicting Concrete CS Based on 7 Ingredients & Curing Age</h2>", unsafe_allow_html=True)
 st.markdown("<h4 style='color:#C00000;'>Developed by: Mohamed K. Elshaarawy, Abdelrahman K. Hamed & Mostafa M. Alsaadawi</h4>", unsafe_allow_html=True)
 
-# Load model
-model_path_catb = "C:/Users/asus1/Desktop/catboost.joblib"
-if not os.path.exists(model_path_catb):
-    st.error("CatBoost model file not found.")
+# Load the CatBoost model
+try:
+    model_catb = joblib.load(model_path)
+except:
+    st.error("Model could not be loaded.")
     st.stop()
-
-model_catb = joblib.load(model_path_catb)
 
 # Parameters
 st.subheader("Definition of Parameters")
