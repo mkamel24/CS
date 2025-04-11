@@ -46,9 +46,15 @@ for label, key in params.items():
 
 # Predict button
 if st.button("Calculate"):
-    input_data = np.array([[entries[key] for key in params.values()]])
-    try:
-        prediction = model_catb.predict(input_data)
-        st.success(f"Concrete Compressive Strength (CS) = {prediction[0]:.4f} MPa")
-    except Exception as e:
-        st.error(f"An error occurred during prediction: {e}")
+    input_values = [entries[key] for key in params.values()]
+
+    # Check if all values are zero
+    if all(value == 0 for value in input_values):
+        st.warning("Please enter at least one value greater than zero.")
+    else:
+        input_data = np.array([input_values])
+        try:
+            prediction = model_catb.predict(input_data)
+            st.success(f"Concrete Compressive Strength (CS) = {prediction[0]:.4f} MPa")
+        except Exception as e:
+            st.error(f"An error occurred during prediction: {e}")
