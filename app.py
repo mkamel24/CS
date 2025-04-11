@@ -21,19 +21,21 @@ def download_file(url, local_path):
             with open(local_path, 'wb') as f:
                 f.write(r.content)
         else:
-            st.error(f"Failed to download file from {url}")
+            st.error(f"Failed to download file from {url} — HTTP Status {r.status_code}")
             st.stop()
 
 # Download image and model
 download_file(image_url, image_path)
 download_file(model_url, model_path)
 
-# Load and display the image
+# Load CatBoost model with error handling
 try:
-    image = Image.open(image_path)
-    st.image(image, use_column_width=True)
-except:
-    st.error("Image could not be loaded.")
+    model_catb = joblib.load(model_path)
+    if not hasattr(model_catb, "predict"):
+        raise ValueError("Loaded object is not a valid model.")
+except Exception as e:
+    st.error(f"Model could not be loaded: {e}")
+    st.stop()
 
 # Title and authors
 st.markdown("<h2 style='color:#0000FF;'>GUI model for Predicting Concrete CS Based on 7 Ingredients & Curing Age</h2>", unsafe_allow_html=True)
