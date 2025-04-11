@@ -28,7 +28,7 @@ if os.path.exists(image_path):
     resized_image = image.resize(new_size)
     st.image(resized_image, caption="Concrete Mix Illustration", use_container_width=False)
 
-# Title and developer info with styled HTML
+# Title and developer info
 st.markdown("""
     <h2 style='text-align: center; font-family: Georgia, serif; color: #2F4F4F;'>
         Predicting Concrete Compressive Strength (MPa)
@@ -37,6 +37,19 @@ st.markdown("""
         <strong>Using Machine Learning (CatBoost Model)</strong><br>
         Developers: <em>Mohamed K. Elshaarawy, Abdelrahman K. Hamed & Mostafa M. Alsaadawi</em>
     </p>
+""", unsafe_allow_html=True)
+
+# Display model hyperparameters
+st.markdown("""
+<div style='background-color:#f0f8ff; padding: 10px; border-left: 4px solid #4682B4; font-family:Verdana;'>
+    <strong>Model Info:</strong><br>
+    <ul>
+        <li><code>learning_rate=0.124</code></li>
+        <li><code>depth=4</code></li>
+        <li><code>l2_leaf_reg=1.0</code></li>
+        <li>Make sure the model was trained with these settings.</li>
+    </ul>
+</div>
 """, unsafe_allow_html=True)
 
 # Input section
@@ -56,7 +69,7 @@ with col2:
     x7 = st.number_input("X7: Fine Aggregate (kg/m³)", min_value=0.0, format="%.2f", key="x7")
     x8 = st.number_input("X8: Age (days)", min_value=0.0, format="%.2f", key="x8")
 
-# Prediction logic
+# Prediction
 if st.button("Predict"):
     input_values = [x1, x2, x3, x4, x5, x6, x7, x8]
 
