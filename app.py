@@ -1,80 +1,70 @@
 import streamlit as st
-import numpy as np
 import joblib
-from PIL import Image
-import requests
 import os
+from PIL import Image
+import numpy as np
 
-# URLs for GitHub-hosted files
-image_url = "https://raw.githubusercontent.com/mkamel24/CS/main/image.jpg"
-model_url = "https://github.com/mkamel24/CS/raw/main/catboost.joblib"
+# Set page configuration
+st.set_page_config(page_title="Concrete Strength Predictor", layout="centered")
 
-# Local file paths
-image_path = "image.jpg"
-model_path = "catboost.joblib"
-
-# Function to download files if they don't exist
-def download_file(url, local_path):
-    if not os.path.exists(local_path):
-        r = requests.get(url)
-        if r.status_code == 200:
-            with open(local_path, 'wb') as f:
-                f.write(r.content)
-        else:
-            st.error(f"Failed to download file from {url} (HTTP {r.status_code})")
-            st.stop()
-
-# Download image and model
-download_file(image_url, image_path)
-download_file(model_url, model_path)
-
-# Load and show the image
-try:
-    image = Image.open(image_path)
-    st.image(image, use_container_width=True)
-except Exception as e:
-    st.error(f"Image could not be loaded: {e}")
-
-# Titles
-st.markdown("<h2 style='color:#0000FF;'>GUI model for Predicting Concrete CS Based on 7 Ingredients & Curing Age</h2>", unsafe_allow_html=True)
-st.markdown("<h4 style='color:#C00000;'>Developed by: Mohamed K. Elshaarawy, Abdelrahman K. Hamed & Mostafa M. Alsaadawi</h4>", unsafe_allow_html=True)
-
-# Load model with error handling
-try:
-    model_catb = joblib.load(model_path)
-    if not hasattr(model_catb, "predict"):
-        raise ValueError("Loaded object is not a valid model.")
-except Exception as e:
-    st.error(f"Model could not be loaded: {e}")
-    st.info("Try running this app in an environment with compatible numpy, joblib, and catboost versions.")
+# Load the CatBoost model
+model_path = os.path.join(os.path.dirname(__file__), "catboost.joblib")
+if not os.path.exists(model_path):
+    st.error("Model file not found. Please ensure catboost.joblib is in the same directory as this app.")
     st.stop()
 
-# Parameter input section
-st.subheader("Definition of Parameters")
-params = {
-    "X1: Cement (kg/m³)": "X1",
-    "X2: Blast Furnace Slag (kg/m³)": "X2",
-    "X3: Fly Ash (kg/m³)": "X3",
-    "X4: Water (kg/m³)": "X4",
-    "X5: Superplasticizer (kg/m³)": "X5",
-    "X6: Coarse Aggregate (kg/m³)": "X6",
-    "X7: Fine Aggregate (kg/m³)": "X7",
-    "X8: Age (day)": "X8"
-}
+try:
+    model = joblib.load(model_path)
+except Exception as e:
+    st.error(f"Failed to load model: {e}")
+    st.stop()
 
-entries = {}
-for label, key in params.items():
-    entries[key] = st.number_input(label, min_value=0.0, format="%.2f")
+# Load and display image
+image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
+if os.path.exists(image_path):
+    image = Image.open(image_path)
+    scale_ratio = 0.6
+    new_size = (int(image.width * scale_ratio), int(image.height * scale_ratio))
+    resized_image = image.resize(new_size)
+    st.image(resized_image, caption="Concrete Mix Illustration", use_container_width=False)
 
-# Prediction
-if st.button("Calculate"):
-    input_values = [entries[key] for key in params.values()]
+# Title and developer info with styled HTML
+st.markdown("""
+    <h2 style='text-align: center; font-family: Georgia, serif; color: #2F4F4F;'>
+        Predicting Concrete Compressive Strength (MPa)
+    </h2>
+    <p style='text-align: center; font-size:16px; font-family:Courier New; color: #555;'>
+        <strong>Using Machine Learning (CatBoost Model)</strong><br>
+        Developers: <em>Mohamed K. Elshaarawy, Abdelrahman K. Hamed & Mostafa M. Alsaadawi</em>
+    </p>
+""", unsafe_allow_html=True)
+
+# Input section
+st.markdown("<h4 style='font-family:Verdana; color:#003366;'>Input Parameters</h4>", unsafe_allow_html=True)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    x1 = st.number_input("X1: Cement (kg/m³)", min_value=0.0, format="%.2f", key="x1")
+    x2 = st.number_input("X2: Blast Furnace Slag (kg/m³)", min_value=0.0, format="%.2f", key="x2")
+    x3 = st.number_input("X3: Fly Ash (kg/m³)", min_value=0.0, format="%.2f", key="x3")
+    x4 = st.number_input("X4: Water (kg/m³)", min_value=0.0, format="%.2f", key="x4")
+
+with col2:
+    x5 = st.number_input("X5: Superplasticizer (kg/m³)", min_value=0.0, format="%.2f", key="x5")
+    x6 = st.number_input("X6: Coarse Aggregate (kg/m³)", min_value=0.0, format="%.2f", key="x6")
+    x7 = st.number_input("X7: Fine Aggregate (kg/m³)", min_value=0.0, format="%.2f", key="x7")
+    x8 = st.number_input("X8: Age (days)", min_value=0.0, format="%.2f", key="x8")
+
+# Prediction logic
+if st.button("Predict"):
+    input_values = [x1, x2, x3, x4, x5, x6, x7, x8]
+
     if all(v == 0 for v in input_values):
-        st.warning("Please enter at least one value greater than zero.")
+        st.warning("Please enter non-zero values for at least one input to make a prediction.")
     else:
         try:
-            input_data = np.array([input_values])
-            prediction = model_catb.predict(input_data)
-            st.success(f"Concrete Compressive Strength (CS) = {prediction[0]:.4f} MPa")
+            prediction = model.predict([input_values])[0]
+            st.success(f"Predicted Concrete Compressive Strength: **{prediction:.4f} MPa**")
         except Exception as e:
             st.error(f"Prediction failed: {e}")
