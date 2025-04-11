@@ -1,83 +1,63 @@
 import streamlit as st
 import joblib
 import os
-from PIL import Image
 import numpy as np
+from PIL import Image
 
-# Set page configuration
+# Set page title and layout
 st.set_page_config(page_title="Concrete Strength Predictor", layout="centered")
 
-# Load the CatBoost model
+# Paths to local model and image
 model_path = os.path.join(os.path.dirname(__file__), "catboost.joblib")
-if not os.path.exists(model_path):
-    st.error("Model file not found. Please ensure catboost.joblib is in the same directory as this app.")
-    st.stop()
+image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
 
+# Load model
 try:
     model = joblib.load(model_path)
 except Exception as e:
-    st.error(f"Failed to load model: {e}")
+    st.error(f"Model loading failed: {e}")
     st.stop()
 
 # Load and display image
-image_path = os.path.join(os.path.dirname(__file__), "image.jpg")
 if os.path.exists(image_path):
-    image = Image.open(image_path)
-    scale_ratio = 0.6
-    new_size = (int(image.width * scale_ratio), int(image.height * scale_ratio))
-    resized_image = image.resize(new_size)
-    st.image(resized_image, caption="Concrete Mix Illustration", use_container_width=False)
+    img = Image.open(image_path)
+    st.image(img, caption="Concrete Mix Illustration", use_container_width=True)
 
-# Title and developer info
+# App title and credits
 st.markdown("""
-    <h2 style='text-align: center; font-family: Georgia, serif; color: #2F4F4F;'>
-        Predicting Concrete Compressive Strength (MPa)
-    </h2>
-    <p style='text-align: center; font-size:16px; font-family:Courier New; color: #555;'>
-        <strong>Using Machine Learning (CatBoost Model)</strong><br>
-        Developers: <em>Mohamed K. Elshaarawy, Abdelrahman K. Hamed & Mostafa M. Alsaadawi</em>
+    <h2 style='text-align: center; color: #2F4F4F;'>Concrete Compressive Strength Predictor</h2>
+    <p style='text-align: center; font-size:16px; color: #555;'>
+        <strong>Using CatBoost Regression Model</strong><br>
+        <em>Developed by Mohamed K. Elshaarawy, Abdelrahman K. Hamed & Mostafa M. Alsaadawi</em>
     </p>
 """, unsafe_allow_html=True)
 
-# Display model hyperparameters
-st.markdown("""
-<div style='background-color:#f0f8ff; padding: 10px; border-left: 4px solid #4682B4; font-family:Verdana;'>
-    <strong>Model Info:</strong><br>
-    <ul>
-        <li><code>learning_rate=0.124</code></li>
-        <li><code>depth=4</code></li>
-        <li><code>l2_leaf_reg=1.0</code></li>
-        <li>Make sure the model was trained with these settings.</li>
-    </ul>
-</div>
-""", unsafe_allow_html=True)
-
 # Input section
-st.markdown("<h4 style='font-family:Verdana; color:#003366;'>Input Parameters</h4>", unsafe_allow_html=True)
+st.header("Enter Concrete Mix Details")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    x1 = st.number_input("X1: Cement (kg/m³)", min_value=0.0, format="%.2f", key="x1")
-    x2 = st.number_input("X2: Blast Furnace Slag (kg/m³)", min_value=0.0, format="%.2f", key="x2")
-    x3 = st.number_input("X3: Fly Ash (kg/m³)", min_value=0.0, format="%.2f", key="x3")
-    x4 = st.number_input("X4: Water (kg/m³)", min_value=0.0, format="%.2f", key="x4")
+    x1 = st.number_input("Cement (kg/m³)", min_value=0.0, format="%.2f")
+    x2 = st.number_input("Blast Furnace Slag (kg/m³)", min_value=0.0, format="%.2f")
+    x3 = st.number_input("Fly Ash (kg/m³)", min_value=0.0, format="%.2f")
+    x4 = st.number_input("Water (kg/m³)", min_value=0.0, format="%.2f")
 
 with col2:
-    x5 = st.number_input("X5: Superplasticizer (kg/m³)", min_value=0.0, format="%.2f", key="x5")
-    x6 = st.number_input("X6: Coarse Aggregate (kg/m³)", min_value=0.0, format="%.2f", key="x6")
-    x7 = st.number_input("X7: Fine Aggregate (kg/m³)", min_value=0.0, format="%.2f", key="x7")
-    x8 = st.number_input("X8: Age (days)", min_value=0.0, format="%.2f", key="x8")
+    x5 = st.number_input("Superplasticizer (kg/m³)", min_value=0.0, format="%.2f")
+    x6 = st.number_input("Coarse Aggregate (kg/m³)", min_value=0.0, format="%.2f")
+    x7 = st.number_input("Fine Aggregate (kg/m³)", min_value=0.0, format="%.2f")
+    x8 = st.number_input("Age (days)", min_value=0.0, format="%.2f")
 
-# Prediction
+# Prediction button
 if st.button("Predict"):
-    input_values = [x1, x2, x3, x4, x5, x6, x7, x8]
+    inputs = [x1, x2, x3, x4, x5, x6, x7, x8]
 
-    if all(v == 0 for v in input_values):
-        st.warning("Please enter non-zero values for at least one input to make a prediction.")
+    if all(val == 0 for val in inputs):
+        st.warning("Please enter values greater than zero.")
     else:
         try:
-            prediction = model.predict([input_values])[0]
-            st.success(f"Predicted Concrete Compressive Strength: **{prediction:.4f} MPa**")
+            prediction = model.predict([inputs])[0]
+            st.success(f"Predicted Compressive Strength: **{prediction:.4f} MPa**")
         except Exception as e:
             st.error(f"Prediction failed: {e}")
