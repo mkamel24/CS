@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 
 # Load CatBoost model
-model_path = os.path.join(os.path.dirname(__file__), "catboost.joblib")
+model_path = os.path.join(os.path.dirname(__file__), "CGB.joblib")
 try:
     model = joblib.load(model_path)
 except Exception as e:
